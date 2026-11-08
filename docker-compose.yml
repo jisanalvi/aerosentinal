@@ -1,0 +1,23 @@
+services:
+  mongodb:
+    image: mongo:8
+    container_name: mern-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mern-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mqtt/config:/mosquitto/config:ro
+      - mosquitto_data:/mosquitto/data
+
+volumes:
+  mongo_data:
+  mosquitto_data:
