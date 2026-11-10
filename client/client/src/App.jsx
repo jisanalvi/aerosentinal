@@ -67,7 +67,7 @@ const menuItems = [
 ];
 
 
-function Sidebar({ activePage, setActivePage, open }) {
+function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
 
   return (
 
@@ -105,7 +105,10 @@ function Sidebar({ activePage, setActivePage, open }) {
               className={`nav-item ${
                 activePage === item.name ? "active" : ""
               }`}
-              onClick={() => setActivePage(item.name)}
+              onClick={() => {
+                setActivePage(item.name);
+                closeSidebar();
+              }}
             >
 
               <Icon size={19} />
@@ -705,6 +708,8 @@ function App() {
         activePage={activePage}
         setActivePage={setActivePage}
         open={sidebarOpen}
+        closeSidebar={() => setSidebarOpen(false)}
+
       />
 
       <div className="main-area">
