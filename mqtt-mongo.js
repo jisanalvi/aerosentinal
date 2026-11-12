@@ -1,11 +1,12 @@
+require('dotenv').config();
 
 const mqtt = require('mqtt');
 const mongoose = require('mongoose');
 
-// Connect to MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/aerosentinal')
-.then(() => console.log('MongoDB Connected!'))
-.catch(err => console.log(err));
+// Connect to MongoDB Atlas
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log('MongoDB Atlas Connected!'))
+.catch(err => console.log('MongoDB Error:', err.message));
 
 // Create data structure
 const Sensor = mongoose.model('Sensor', {
@@ -38,7 +39,7 @@ client.on('message', async (topic, message) => {
             payload: data
         });
 
-        console.log('Data saved to MongoDB!');
+        console.log('Data saved to MongoDB Atlas!');
     } catch (err) {
         console.log('Database error:', err.message);
     }

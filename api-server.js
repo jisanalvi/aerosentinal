@@ -1,3 +1,4 @@
+require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -8,11 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/aerosentinal')
-  .then(() => console.log('MongoDB Connected!'))
-  .catch(err => console.log(err));
-
 // Sensor model
 const Sensor = mongoose.model('Sensor', {
   topic: String,
@@ -22,7 +18,7 @@ const Sensor = mongoose.model('Sensor', {
 
 // Test API
 app.get('/', (req, res) => {
-  res.send('AeroSentinal Backend is Running!');
+  res.send('AeroSentinel Backend is Running!');
 });
 
 // Get all sensor records
@@ -45,7 +41,17 @@ app.get('/api/sensors/latest', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(5000, () => {
-  console.log('Server running at http://localhost:5000');
-});
+// Connect to MongoDB Atlas and start server
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('MongoDB Atlas Connected!');
+
+    const PORT = process.env.PORT || 5000;
+
+    app.listen(PORT, () => {
+      console.log(`AeroSentinel API running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('MongoDB Connection Error:', err.message);
+  });
