@@ -15,26 +15,14 @@ import {
   Droplets,
   Gauge,
   ShieldCheck,
-  ArrowUpRight,
-  Fan,
-  Power,
   Menu,
   CircleHelp
 } from "lucide-react";
 
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from "recharts";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import "./index.css";
+
 import LiveMonitoring from "./pages/LiveMonitoring";
 import PredictionEngine from "./pages/PredictionEngine";
 import AirflowSystem from "./pages/AirflowSystem";
@@ -42,18 +30,8 @@ import Actuation from "./pages/Actuation";
 import Analytics from "./pages/Analytics";
 import DeviceNetwork from "./pages/DeviceNetwork";
 
-
-const chartData = [
-  { time: "10:00", gas: 85 },
-  { time: "10:05", gas: 92 },
-  { time: "10:10", gas: 89 },
-  { time: "10:15", gas: 105 },
-  { time: "10:20", gas: 110 },
-  { time: "10:25", gas: 103 },
-  { time: "10:30", gas: 125 },
-  { time: "10:35", gas: 118 },
-  { time: "10:40", gas: 125 }
-];
+const API_URL =
+  "https://aerosentinal.onrender.com/api/sensors/latest";
 
 
 const menuItems = [
@@ -66,6 +44,8 @@ const menuItems = [
   { name: "Device Network", icon: Network }
 ];
 
+
+// SIDEBAR
 
 function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
 
@@ -86,11 +66,9 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
 
       </div>
 
-
       <div className="sidebar-label">
         MAIN MENU
       </div>
-
 
       <nav>
 
@@ -127,7 +105,6 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
 
       </nav>
 
-
       <div className="sidebar-bottom">
 
         <button className="nav-item">
@@ -140,15 +117,13 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
           <span>Help & Support</span>
         </button>
 
-
         <div className="system-mini-card">
 
           <div className="mini-status">
-            <span className="live-dot"></span>
-            SYSTEM ONLINE
+            AEROSENTINEL CLOUD
           </div>
 
-          <p>All monitoring services active.</p>
+          <p>Environmental monitoring platform.</p>
 
           <div className="system-progress">
             <div></div>
@@ -168,6 +143,8 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
 
 }
 
+
+// TOPBAR
 
 function Topbar({ activePage, toggleSidebar }) {
 
@@ -191,13 +168,7 @@ function Topbar({ activePage, toggleSidebar }) {
 
       </div>
 
-
       <div className="topbar-right">
-
-        <div className="connection-badge">
-          <span className="live-dot"></span>
-          SYSTEM ONLINE
-        </div>
 
         <button className="icon-button">
           <Search size={19} />
@@ -232,6 +203,8 @@ function Topbar({ activePage, toggleSidebar }) {
 }
 
 
+// METRIC CARD
+
 function MetricCard({ title, value, unit, icon: Icon, status, color }) {
 
   return (
@@ -250,7 +223,6 @@ function MetricCard({ title, value, unit, icon: Icon, status, color }) {
 
       </div>
 
-
       <p className="metric-title">{title}</p>
 
       <div className="metric-value">
@@ -265,348 +237,250 @@ function MetricCard({ title, value, unit, icon: Icon, status, color }) {
 }
 
 
-function GasChart() {
-
-  return (
-
-    <div className="panel chart-panel">
-
-      <div className="panel-header">
-
-        <div>
-          <h3>Gas Concentration</h3>
-          <p>Historical sensor readings</p>
-        </div>
-
-        <button className="period-button">
-          Last 40 min
-          <ChevronDown size={15} />
-        </button>
-
-      </div>
-
-
-      <div className="chart-legend">
-        <span className="legend-dot"></span>
-        Gas sensor reading
-      </div>
-
-
-      <div className="chart-container">
-
-        <ResponsiveContainer width="100%" height="100%">
-
-          <AreaChart data={chartData}>
-
-            <defs>
-              <linearGradient id="gasGradient" x1="0" y1="0" x2="0" y2="1">
-
-                <stop offset="0%" stopColor="#19c6d9" stopOpacity={0.3} />
-
-                <stop offset="95%" stopColor="#19c6d9" stopOpacity={0} />
-
-              </linearGradient>
-            </defs>
-
-
-            <CartesianGrid
-              stroke="#243344"
-              strokeDasharray="4 4"
-              vertical={false}
-            />
-
-            <XAxis
-              dataKey="time"
-              stroke="#718096"
-              tick={{ fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-            />
-
-            <YAxis
-              stroke="#718096"
-              tick={{ fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-            />
-
-            <Tooltip
-              contentStyle={{
-                background: "#111e2d",
-                border: "1px solid #26394b",
-                borderRadius: "10px",
-                color: "#fff"
-              }}
-            />
-
-            <Area
-              type="monotone"
-              dataKey="gas"
-              stroke="#19c6d9"
-              strokeWidth={2.5}
-              fill="url(#gasGradient)"
-            />
-
-          </AreaChart>
-
-        </ResponsiveContainer>
-
-      </div>
-
-    </div>
-
-  );
-
-}
-
-
-function AirflowPanel() {
-
-  return (
-
-    <div className="panel airflow-panel">
-
-      <div className="panel-header">
-
-        <div>
-          <h3>Airflow Visualization</h3>
-          <p>Dual-zone aspiration system</p>
-        </div>
-
-        <span className="active-tag">ACTIVE</span>
-
-      </div>
-
-
-      <div className="airflow-content">
-
-        <div className="airflow-room">
-
-          <div className="airflow-label ceiling">
-            CEILING INTAKE
-          </div>
-
-          <div className="airflow-pipe ceiling-pipe"></div>
-
-          <div className="airflow-arrows">
-            <span>↓</span>
-            <span>↓</span>
-            <span>↓</span>
-          </div>
-
-          <div className="airflow-center">
-            <Fan size={29} />
-            <strong>AIR PUMP</strong>
-            <small>Sampling chamber</small>
-          </div>
-
-          <div className="airflow-arrows bottom-arrows">
-            <span>↑</span>
-            <span>↑</span>
-            <span>↑</span>
-          </div>
-
-          <div className="airflow-pipe floor-pipe"></div>
-
-          <div className="airflow-label floor">
-            FLOOR INTAKE
-          </div>
-
-        </div>
-
-
-        <div className="airflow-info">
-
-          <div className="intake-info">
-            <span className="live-dot"></span>
-            <div>
-              <strong>Ceiling Intake</strong>
-              <small>Sampling enabled</small>
-            </div>
-          </div>
-
-          <div className="intake-info">
-            <span className="live-dot"></span>
-            <div>
-              <strong>Floor Intake</strong>
-              <small>Sampling enabled</small>
-            </div>
-          </div>
-
-          <div className="intake-info">
-            <span className="live-dot"></span>
-            <div>
-              <strong>Micro Pump</strong>
-              <small>Command active</small>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  );
-
-}
-
-
-function PredictionPanel() {
-
-  return (
-
-    <div className="panel prediction-panel">
-
-      <div className="panel-header">
-
-        <div>
-          <h3>Prediction Engine</h3>
-          <p>Edge-computed threat assessment</p>
-        </div>
-
-        <div className="prediction-icon">
-          <BrainCircuit size={22} />
-        </div>
-
-      </div>
-
-
-      <div className="prediction-status">
-
-        <div className="prediction-circle">
-          <ShieldCheck size={30} />
-        </div>
-
-        <div>
-          <span className="safe-label">CURRENT ASSESSMENT</span>
-          <h2>NORMAL</h2>
-          <p>No active threat reported</p>
-        </div>
-
-      </div>
-
-
-      <div className="prediction-details">
-
-        <div>
-          <span>Accumulation Rate</span>
-          <strong>+0.8 PPM/s</strong>
-        </div>
-
-        <div>
-          <span>Prediction Window</span>
-          <strong>5 Minutes</strong>
-        </div>
-
-        <div>
-          <span>Processing</span>
-          <strong>Arduino UNO</strong>
-        </div>
-
-      </div>
-
-    </div>
-
-  );
-
-}
-
-
-function ActuationPanel() {
-
-  return (
-
-    <div className="panel actuation-panel">
-
-      <div className="panel-header">
-
-        <div>
-          <h3>Actuation Matrix</h3>
-          <p>Dual-relay output monitoring</p>
-        </div>
-
-        <Zap size={22} color="#f5b942" />
-
-      </div>
-
-
-      <div className="actuator-item">
-
-        <div className="actuator-icon">
-          <Fan size={23} />
-        </div>
-
-        <div className="actuator-info">
-          <strong>Exhaust Fan</strong>
-          <small>Ventilation output</small>
-        </div>
-
-        <span className="actuator-state">
-          OFF
-        </span>
-
-      </div>
-
-
-      <div className="actuator-item">
-
-        <div className="actuator-icon">
-          <Power size={23} />
-        </div>
-
-        <div className="actuator-info">
-          <strong>Gas Isolation Valve</strong>
-          <small>Solenoid output</small>
-        </div>
-
-        <span className="actuator-state safe">
-          OPEN
-        </span>
-
-      </div>
-
-
-      <div className="override-status">
-        <span className="live-dot"></span>
-        Manual override: INACTIVE
-      </div>
-
-    </div>
-
-  );
-
-}
-
+// OVERVIEW
 
 function Overview() {
+
+  const [sensorData, setSensorData] = useState(null);
+  const [apiError, setApiError] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+
+  // FETCH LATEST CLOUD DATA
+
+  useEffect(() => {
+
+    let isMounted = true;
+
+    const fetchLatestData = async () => {
+
+      try {
+
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error("Unable to fetch sensor data");
+        }
+
+        const result = await response.json();
+
+        // Supports direct API response and common wrapped responses.
+        const latestData = result.data || result.sensor || result;
+
+        if (isMounted) {
+          setSensorData(latestData);
+          setApiError(false);
+        }
+
+      } catch (error) {
+
+        console.error("Overview API Error:", error);
+
+        if (isMounted) {
+          setApiError(true);
+        }
+
+      }
+
+    };
+
+
+    fetchLatestData();
+
+    const fetchInterval = setInterval(fetchLatestData, 3000);
+
+    const clockInterval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+
+    return () => {
+
+      isMounted = false;
+
+      clearInterval(fetchInterval);
+      clearInterval(clockInterval);
+
+    };
+
+  }, []);
+
+
+  // PARSE SENSOR PAYLOAD
+
+  let parsedPayload = {};
+
+  try {
+
+    const payload = sensorData?.payload;
+
+    parsedPayload =
+      typeof payload === "string"
+        ? JSON.parse(payload || "{}")
+        : payload || {};
+
+  } catch (error) {
+
+    console.error("Payload parsing error:", error);
+
+  }
+
+
+  // GET VALID SENSOR VALUES
+
+  const getReading = (key) => {
+
+    const value = parsedPayload[key];
+
+    if (
+      value === undefined ||
+      value === null ||
+      value === ""
+    ) {
+      return null;
+    }
+
+    const number = Number(value);
+
+    return Number.isFinite(number) ? number : null;
+
+  };
+
+
+  const temperature = getReading("tmp");
+  const humidity = getReading("hum");
+  const pressure = getReading("prs");
+  const hazard = getReading("haz");
+
+
+  // DATA FRESHNESS
+
+  const receivedTime = sensorData?.receivedAt
+    ? new Date(sensorData.receivedAt).getTime()
+    : null;
+
+  const dataAgeSeconds =
+    receivedTime !== null && Number.isFinite(receivedTime)
+      ? (currentTime - receivedTime) / 1000
+      : null;
+
+
+  const getConnectionStatus = () => {
+
+    if (dataAgeSeconds === null || dataAgeSeconds < 0) {
+      return "WAITING";
+    }
+
+    if (dataAgeSeconds <= 15) {
+      return "LIVE";
+    }
+
+    if (dataAgeSeconds <= 60) {
+      return "STALE";
+    }
+
+    return "OFFLINE";
+
+  };
+
+
+  const connectionStatus = getConnectionStatus();
+
+
+  // HAZARD STATUS
+
+  const hazardStatus =
+    hazard === 0
+      ? "NO HAZARD"
+      : hazard === 1
+      ? "HAZARD DETECTED"
+      : "UNKNOWN";
+
+
+  // GLOBAL SYSTEM STATUS
+
+  let globalStatus = "WAITING";
+
+  if (connectionStatus === "OFFLINE") {
+    globalStatus = "OFFLINE";
+  } else if (connectionStatus === "STALE") {
+    globalStatus = "STALE";
+  } else if (connectionStatus === "LIVE" && hazard === 1) {
+    globalStatus = "DANGER";
+  } else if (connectionStatus === "LIVE" && hazard === 0) {
+    globalStatus = "SAFE";
+  }
+
+
+  const lastUpdate =
+    receivedTime !== null && Number.isFinite(receivedTime)
+      ? new Date(receivedTime).toLocaleString()
+      : "Waiting for sensor data";
+
+
+  const formatValue = (value) =>
+    value === null ? "--" : value.toFixed(1);
+
+
+  // GLOBAL STATUS DESCRIPTION
+
+  const getStatusDescription = () => {
+
+    if (globalStatus === "SAFE") {
+      return "Live communication established. No hazard reported.";
+    }
+
+    if (globalStatus === "DANGER") {
+      return "The incoming sensor payload reports a hazard.";
+    }
+
+    if (globalStatus === "STALE") {
+      return "Sensor communication has become delayed.";
+    }
+
+    if (globalStatus === "OFFLINE") {
+      return "No recent sensor communication received.";
+    }
+
+    return "Waiting for the first valid sensor update.";
+
+  };
+
 
   return (
 
     <main className="dashboard">
 
+      {/* HEADER */}
+
       <div className="welcome-section">
 
         <div>
+
           <span className="section-eyebrow">
             ENVIRONMENTAL INTELLIGENCE PLATFORM
           </span>
 
-          <h1>Good evening, Administrator <span>✦</span></h1>
+          <h1>
+            AeroSentinel Overview <span>✦</span>
+          </h1>
 
           <p>
-            Here's what's happening with your environmental safety network.
+            A real-time summary of your environmental safety system.
           </p>
+
         </div>
 
 
         <div className="overview-date">
           <Activity size={17} />
-          LIVE MONITORING
+          CLOUD MONITORING
         </div>
 
       </div>
 
+
+      {/* GLOBAL STATUS */}
 
       <div className="system-banner">
 
@@ -615,80 +489,198 @@ function Overview() {
         </div>
 
         <div className="banner-text">
-          <strong>All Systems Operational</strong>
-          <p>Your monitoring dashboard is ready.</p>
+
+          <strong>
+            {globalStatus === "SAFE"
+              ? "System Operating Normally"
+              : globalStatus === "DANGER"
+              ? "Hazard Detected"
+              : globalStatus === "STALE"
+              ? "Communication Delayed"
+              : globalStatus === "OFFLINE"
+              ? "System Offline"
+              : "Waiting for Sensor Data"}
+          </strong>
+
+          <p>{getStatusDescription()}</p>
+
         </div>
 
         <div className="banner-right">
-          <span className="live-dot"></span>
-          OPERATIONAL
+
+          <span
+            className={
+              connectionStatus === "LIVE"
+                ? "live-dot"
+                : ""
+            }
+          ></span>
+
+          {globalStatus}
+
         </div>
 
       </div>
 
 
+      {/* ENVIRONMENTAL METRICS */}
+
       <div className="metrics-grid">
 
         <MetricCard
-          title="Gas Concentration"
-          value="125"
-          unit="PPM"
-          icon={Gauge}
-          status="DEMO DATA"
-          color="cyan"
-        />
-
-        <MetricCard
-          title="Accumulation Rate"
-          value="+0.8"
-          unit="PPM/s"
-          icon={ArrowUpRight}
-          status="DEMO DATA"
-          color="orange"
-        />
-
-        <MetricCard
           title="Temperature"
-          value="28.5"
+          value={formatValue(temperature)}
           unit="°C"
           icon={Thermometer}
-          status="DEMO DATA"
+          status={connectionStatus}
           color="purple"
         />
 
         <MetricCard
           title="Humidity"
-          value="62"
+          value={formatValue(humidity)}
           unit="%"
           icon={Droplets}
-          status="DEMO DATA"
+          status={connectionStatus}
           color="blue"
+        />
+
+        <MetricCard
+          title="Atmospheric Pressure"
+          value={formatValue(pressure)}
+          unit="hPa"
+          icon={Gauge}
+          status={connectionStatus}
+          color="cyan"
         />
 
       </div>
 
 
-      <div className="main-grid">
-
-        <GasChart />
-
-        <AirflowPanel />
-
-      </div>
-
+      {/* SYSTEM SUMMARY */}
 
       <div className="bottom-grid">
 
-        <PredictionPanel />
+        <div className="panel">
 
-        <ActuationPanel />
+          <div className="panel-header">
+
+            <div>
+              <h3>System Summary</h3>
+              <p>Current operating conditions</p>
+            </div>
+
+            <ShieldCheck size={22} />
+
+          </div>
+
+
+          <div className="actuator-item">
+
+            <div className="actuator-icon">
+              <Radio size={22} />
+            </div>
+
+            <div className="actuator-info">
+              <strong>ESP8266 Connectivity</strong>
+              <small>Cloud communication</small>
+            </div>
+
+            <span className="actuator-state">
+              {connectionStatus}
+            </span>
+
+          </div>
+
+
+          <div className="actuator-item">
+
+            <div className="actuator-icon">
+              <ShieldCheck size={22} />
+            </div>
+
+            <div className="actuator-info">
+              <strong>Hazard Detection</strong>
+              <small>ESP8266 reported state</small>
+            </div>
+
+            <span className="actuator-state">
+              {hazardStatus}
+            </span>
+
+          </div>
+
+
+          <div className="actuator-item">
+
+            <div className="actuator-icon">
+              <Activity size={22} />
+            </div>
+
+            <div className="actuator-info">
+              <strong>API Communication</strong>
+              <small>Render cloud backend</small>
+            </div>
+
+            <span className="actuator-state">
+              {apiError ? "ERROR" : "CONNECTED"}
+            </span>
+
+          </div>
+
+        </div>
+
+
+        {/* LAST COMMUNICATION */}
+
+        <div className="panel">
+
+          <div className="panel-header">
+
+            <div>
+              <h3>Communication Status</h3>
+              <p>Latest received sensor packet</p>
+            </div>
+
+            <Radio size={22} />
+
+          </div>
+
+
+          <div style={{ padding: "20px 0" }}>
+
+            <p className="metric-title">
+              LAST COMMUNICATION
+            </p>
+
+            <h3 style={{ marginTop: "10px", wordBreak: "break-word" }}>
+              {lastUpdate}
+            </h3>
+
+            <p style={{ marginTop: "18px", color: "#94a3b8" }}>
+
+              {dataAgeSeconds !== null &&
+              dataAgeSeconds >= 0
+                ? `Data age: ${Math.floor(dataAgeSeconds)} seconds`
+                : "Waiting for communication"}
+
+            </p>
+
+          </div>
+
+        </div>
 
       </div>
 
 
+      {/* FOOTER */}
+
       <footer className="dashboard-footer">
+
         <span>AEROSENTINEL © 2026</span>
+
         <span>ENGINEERED FOR A SAFER ENVIRONMENT</span>
+
       </footer>
 
     </main>
@@ -698,54 +690,86 @@ function Overview() {
 }
 
 
+// MAIN APP
+
 function App() {
+
   const [activePage, setActivePage] = useState("Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+
   return (
+
     <div className="app-layout">
+
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
         open={sidebarOpen}
         closeSidebar={() => setSidebarOpen(false)}
-
       />
 
+
       <div className="main-area">
+
         <Topbar
           activePage={activePage}
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
 
+
         {activePage === "Overview" ? (
+
           <Overview />
+
         ) : activePage === "Live Monitoring" ? (
+
           <LiveMonitoring />
+
         ) : activePage === "Prediction Engine" ? (
+
           <PredictionEngine />
+
         ) : activePage === "Airflow System" ? (
+
           <AirflowSystem />
+
         ) : activePage === "Actuation" ? (
+
           <Actuation />
-        ) : activePage === "Analytics" ?(
+
+        ) : activePage === "Analytics" ? (
+
           <Analytics />
-        ) : activePage === "Device Network" ?(
+
+        ) : activePage === "Device Network" ? (
+
           <DeviceNetwork />
+
         ) : (
+
           <main className="dashboard placeholder-page">
+
             <span className="section-eyebrow">
               AEROSENTINEL MODULE
             </span>
 
             <h1>{activePage}</h1>
 
-            <p>This module will be developed in our next stages.</p>
+            <p>
+              This module will be developed in our next stages.
+            </p>
+
           </main>
+
         )}
+
       </div>
+
     </div>
+
   );
+
 }
 
 
