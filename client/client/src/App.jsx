@@ -16,7 +16,8 @@ import {
   Gauge,
   ShieldCheck,
   Menu,
-  CircleHelp
+  CircleHelp,
+  AlertTriangle
 } from "lucide-react";
 
 import { useState, useEffect } from "react";
@@ -33,7 +34,6 @@ import DeviceNetwork from "./pages/DeviceNetwork";
 const API_URL =
   "https://aerosentinal.onrender.com/api/sensors/latest";
 
-
 const menuItems = [
   { name: "Overview", icon: LayoutDashboard },
   { name: "Live Monitoring", icon: Radio },
@@ -48,13 +48,10 @@ const menuItems = [
 // SIDEBAR
 
 function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
-
   return (
-
     <aside className={`sidebar ${open ? "sidebar-open" : ""}`}>
 
       <div className="brand">
-
         <div className="brand-icon">
           <Activity size={25} />
         </div>
@@ -63,7 +60,6 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
           <h2>AERO<span>SENTINEL</span></h2>
           <p>INTELLIGENT SAFETY SYSTEM</p>
         </div>
-
       </div>
 
       <div className="sidebar-label">
@@ -71,13 +67,10 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
       </div>
 
       <nav>
-
         {menuItems.map((item) => {
-
           const Icon = item.icon;
 
           return (
-
             <button
               key={item.name}
               className={`nav-item ${
@@ -88,21 +81,15 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
                 closeSidebar();
               }}
             >
-
               <Icon size={19} />
-
               <span>{item.name}</span>
 
               {activePage === item.name && (
                 <div className="active-indicator"></div>
               )}
-
             </button>
-
           );
-
         })}
-
       </nav>
 
       <div className="sidebar-bottom">
@@ -118,7 +105,6 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
         </button>
 
         <div className="system-mini-card">
-
           <div className="mini-status">
             AEROSENTINEL CLOUD
           </div>
@@ -128,7 +114,6 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
           <div className="system-progress">
             <div></div>
           </div>
-
         </div>
 
         <div className="version">
@@ -136,20 +121,15 @@ function Sidebar({ activePage, setActivePage, open, closeSidebar }) {
         </div>
 
       </div>
-
     </aside>
-
   );
-
 }
 
 
 // TOPBAR
 
 function Topbar({ activePage, toggleSidebar }) {
-
   return (
-
     <header className="topbar">
 
       <div className="topbar-left">
@@ -195,20 +175,15 @@ function Topbar({ activePage, toggleSidebar }) {
         </div>
 
       </div>
-
     </header>
-
   );
-
 }
 
 
 // METRIC CARD
 
 function MetricCard({ title, value, unit, icon: Icon, status, color }) {
-
   return (
-
     <div className="metric-card">
 
       <div className="metric-top">
@@ -231,9 +206,7 @@ function MetricCard({ title, value, unit, icon: Icon, status, color }) {
       </div>
 
     </div>
-
   );
-
 }
 
 
@@ -256,7 +229,9 @@ function Overview() {
 
       try {
 
-        const response = await fetch(API_URL);
+        const response = await fetch(API_URL, {
+          cache: "no-store"
+        });
 
         if (!response.ok) {
           throw new Error("Unable to fetch sensor data");
@@ -264,8 +239,8 @@ function Overview() {
 
         const result = await response.json();
 
-        // Supports direct API response and common wrapped responses.
-        const latestData = result.data || result.sensor || result;
+        const latestData =
+          result.data || result.sensor || result;
 
         if (isMounted) {
           setSensorData(latestData);
@@ -281,9 +256,7 @@ function Overview() {
         }
 
       }
-
     };
-
 
     fetchLatestData();
 
@@ -292,7 +265,6 @@ function Overview() {
     const clockInterval = setInterval(() => {
       setCurrentTime(Date.now());
     }, 1000);
-
 
     return () => {
 
@@ -314,14 +286,19 @@ function Overview() {
 
     const payload = sensorData?.payload;
 
-    parsedPayload =
-      typeof payload === "string"
-        ? JSON.parse(payload || "{}")
-        : payload || {};
+    if (typeof payload === "string") {
+      parsedPayload = JSON.parse(payload || "{}");
+    } else if (payload && typeof payload === "object") {
+      parsedPayload = payload;
+    } else {
+      // Also supports APIs returning telemetry directly.
+      parsedPayload = sensorData || {};
+    }
 
   } catch (error) {
 
     console.error("Payload parsing error:", error);
+    parsedPayload = {};
 
   }
 
@@ -351,6 +328,8 @@ function Overview() {
   const humidity = getReading("hum");
   const pressure = getReading("prs");
   const hazard = getReading("haz");
+  const health = getReading("hlt");
+  const actuator = getReading("act");
 
 
   // DATA FRESHNESS
@@ -367,7 +346,10 @@ function Overview() {
 
   const getConnectionStatus = () => {
 
-    if (dataAgeSeconds === null || dataAgeSeconds < 0) {
+    if (
+      dataAgeSeconds === null ||
+      dataAgeSeconds < 0
+    ) {
       return "WAITING";
     }
 
@@ -388,33 +370,148 @@ function Overview() {
 
 
   // HAZARD STATUS
+  // Only show hazard information when telemetry is fresh.
 
-  const hazardStatus =
-    hazard === 0
-      ? "NO HAZARD"
-      : hazard === 1
-      ? "HAZARD DETECTED"
-      : "UNKNOWN";
+  const getHazardStatus = () => {
+
+    if (connectionStatus === "OFFLINE") {
+      return "OFFLINE";
+    }
+
+    if (connectionStatus === "STALE") {
+      return "STALE DATA";
+    }
+
+    if (connectionStatus === "WAITING") {
+      return "WAITING";
+    }
+
+    if (hazard === 0) {
+      return "NORMAL";
+    }
+
+    if (hazard === 1) {
+      return "WARNING";
+    }
+
+    if (hazard === 2) {
+      return "CRITICAL HAZARD";
+    }
+
+    return "UNKNOWN";
+
+  };
+
+
+  const hazardStatus = getHazardStatus();
 
 
   // GLOBAL SYSTEM STATUS
 
-  let globalStatus = "WAITING";
+  const getGlobalStatus = () => {
 
-  if (connectionStatus === "OFFLINE") {
-    globalStatus = "OFFLINE";
-  } else if (connectionStatus === "STALE") {
-    globalStatus = "STALE";
-  } else if (connectionStatus === "LIVE" && hazard === 1) {
-    globalStatus = "DANGER";
-  } else if (connectionStatus === "LIVE" && hazard === 0) {
-    globalStatus = "SAFE";
-  }
+    if (connectionStatus === "OFFLINE") {
+      return "OFFLINE";
+    }
 
+    if (connectionStatus === "STALE") {
+      return "STALE";
+    }
+
+    if (connectionStatus === "WAITING") {
+      return "WAITING";
+    }
+
+    if (hazard === 2) {
+      return "CRITICAL";
+    }
+
+    if (hazard === 1) {
+      return "WARNING";
+    }
+
+    if (hazard === 0) {
+      return "NORMAL";
+    }
+
+    return "UNKNOWN";
+
+  };
+
+
+  const globalStatus = getGlobalStatus();
+
+
+  // STATUS DESCRIPTION
+
+  const getStatusDescription = () => {
+
+    if (globalStatus === "NORMAL") {
+      return "Live telemetry received. Controller reports no active hazard.";
+    }
+
+    if (globalStatus === "WARNING") {
+      return "The controller reports a hazard warning. Check the live monitoring dashboard.";
+    }
+
+    if (globalStatus === "CRITICAL") {
+      return "CRITICAL HAZARD REPORTED. The controller has entered its critical hazard state.";
+    }
+
+    if (globalStatus === "STALE") {
+      return "Sensor communication is delayed. The previous reading is not considered current.";
+    }
+
+    if (globalStatus === "OFFLINE") {
+      return "No recent sensor communication received. Current environmental status is unknown.";
+    }
+
+    if (globalStatus === "UNKNOWN") {
+      return "Hazard information is missing or invalid.";
+    }
+
+    return "Waiting for the first valid sensor update.";
+
+  };
+
+
+  // BANNER TITLE
+
+  const getBannerTitle = () => {
+
+    switch (globalStatus) {
+
+      case "NORMAL":
+        return "System Operating Normally";
+
+      case "WARNING":
+        return "Hazard Warning Detected";
+
+      case "CRITICAL":
+        return "CRITICAL HAZARD DETECTED";
+
+      case "STALE":
+        return "Communication Delayed";
+
+      case "OFFLINE":
+        return "System Offline";
+
+      case "UNKNOWN":
+        return "Hazard Status Unknown";
+
+      default:
+        return "Waiting for Sensor Data";
+
+    }
+
+  };
+
+
+  // LAST UPDATE
 
   const lastUpdate =
     receivedTime !== null && Number.isFinite(receivedTime)
-      ? new Date(receivedTime).toLocaleString()
+      ? new Date(receivedTime).toLocaleString("en-IN")
       : "Waiting for sensor data";
 
 
@@ -422,29 +519,18 @@ function Overview() {
     value === null ? "--" : value.toFixed(1);
 
 
-  // GLOBAL STATUS DESCRIPTION
+  // STATUS CLASS
 
-  const getStatusDescription = () => {
-
-    if (globalStatus === "SAFE") {
-      return "Live communication established. No hazard reported.";
-    }
-
-    if (globalStatus === "DANGER") {
-      return "The incoming sensor payload reports a hazard.";
-    }
-
-    if (globalStatus === "STALE") {
-      return "Sensor communication has become delayed.";
-    }
-
-    if (globalStatus === "OFFLINE") {
-      return "No recent sensor communication received.";
-    }
-
-    return "Waiting for the first valid sensor update.";
-
-  };
+  const bannerClass =
+    globalStatus === "NORMAL"
+      ? "normal"
+      : globalStatus === "WARNING"
+        ? "warning"
+        : globalStatus === "CRITICAL"
+          ? "critical"
+          : globalStatus === "STALE"
+            ? "stale"
+            : "offline";
 
 
   return (
@@ -471,7 +557,6 @@ function Overview() {
 
         </div>
 
-
         <div className="overview-date">
           <Activity size={17} />
           CLOUD MONITORING
@@ -482,25 +567,22 @@ function Overview() {
 
       {/* GLOBAL STATUS */}
 
-      <div className="system-banner">
+      <div className={`system-banner ${bannerClass}`}>
 
         <div className="banner-icon">
-          <ShieldCheck size={26} />
+
+          {globalStatus === "CRITICAL" ||
+          globalStatus === "WARNING" ? (
+            <AlertTriangle size={26} />
+          ) : (
+            <ShieldCheck size={26} />
+          )}
+
         </div>
 
         <div className="banner-text">
 
-          <strong>
-            {globalStatus === "SAFE"
-              ? "System Operating Normally"
-              : globalStatus === "DANGER"
-              ? "Hazard Detected"
-              : globalStatus === "STALE"
-              ? "Communication Delayed"
-              : globalStatus === "OFFLINE"
-              ? "System Offline"
-              : "Waiting for Sensor Data"}
-          </strong>
+          <strong>{getBannerTitle()}</strong>
 
           <p>{getStatusDescription()}</p>
 
@@ -575,6 +657,8 @@ function Overview() {
           </div>
 
 
+          {/* ESP CONNECTIVITY */}
+
           <div className="actuator-item">
 
             <div className="actuator-icon">
@@ -583,7 +667,7 @@ function Overview() {
 
             <div className="actuator-info">
               <strong>ESP8266 Connectivity</strong>
-              <small>Cloud communication</small>
+              <small>Cloud telemetry connection</small>
             </div>
 
             <span className="actuator-state">
@@ -593,6 +677,8 @@ function Overview() {
           </div>
 
 
+          {/* HAZARD DETECTION */}
+
           <div className="actuator-item">
 
             <div className="actuator-icon">
@@ -601,7 +687,7 @@ function Overview() {
 
             <div className="actuator-info">
               <strong>Hazard Detection</strong>
-              <small>ESP8266 reported state</small>
+              <small>Arduino controller reported state</small>
             </div>
 
             <span className="actuator-state">
@@ -610,6 +696,36 @@ function Overview() {
 
           </div>
 
+
+          {/* SYSTEM HEALTH */}
+
+          <div className="actuator-item">
+
+            <div className="actuator-icon">
+              <Activity size={22} />
+            </div>
+
+            <div className="actuator-info">
+              <strong>System Health</strong>
+              <small>Arduino health telemetry</small>
+            </div>
+
+            <span className="actuator-state">
+              {connectionStatus === "LIVE"
+                ? health === 0
+                  ? "ALL OK"
+                  : health === 1
+                    ? "DEGRADED"
+                    : health === 2
+                      ? "CRITICAL FAULT"
+                      : "UNKNOWN"
+                : connectionStatus}
+            </span>
+
+          </div>
+
+
+          {/* API CONNECTION */}
 
           <div className="actuator-item">
 
@@ -631,7 +747,7 @@ function Overview() {
         </div>
 
 
-        {/* LAST COMMUNICATION */}
+        {/* COMMUNICATION STATUS */}
 
         <div className="panel">
 
@@ -653,17 +769,30 @@ function Overview() {
               LAST COMMUNICATION
             </p>
 
-            <h3 style={{ marginTop: "10px", wordBreak: "break-word" }}>
+            <h3 style={{
+              marginTop: "10px",
+              wordBreak: "break-word"
+            }}>
               {lastUpdate}
             </h3>
 
-            <p style={{ marginTop: "18px", color: "#94a3b8" }}>
+            <p style={{
+              marginTop: "18px",
+              color: "#94a3b8"
+            }}>
 
               {dataAgeSeconds !== null &&
               dataAgeSeconds >= 0
                 ? `Data age: ${Math.floor(dataAgeSeconds)} seconds`
                 : "Waiting for communication"}
 
+            </p>
+
+            <p style={{
+              marginTop: "12px",
+              color: "#94a3b8"
+            }}>
+              Connection: {connectionStatus}
             </p>
 
           </div>
@@ -697,7 +826,6 @@ function App() {
   const [activePage, setActivePage] = useState("Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-
   return (
 
     <div className="app-layout">
@@ -709,14 +837,12 @@ function App() {
         closeSidebar={() => setSidebarOpen(false)}
       />
 
-
       <div className="main-area">
 
         <Topbar
           activePage={activePage}
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
-
 
         {activePage === "Overview" ? (
 
@@ -771,6 +897,5 @@ function App() {
   );
 
 }
-
 
 export default App;
